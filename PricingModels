@@ -1,0 +1,34 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Market_Model_CSharp
+{
+    public class PricingModel
+    {
+
+    }
+
+
+    public class PlainVanillaBond_SpotRatePricing:PricingModel
+    {
+
+    }
+
+    public class PlainVanillaBond_ParRatePricing:PricingModel
+    {
+        public PlainVanillaBond_ParRatePricing(InterestRate uParRate)
+        {
+            ParRate = uParRate;
+        }
+
+        public InterestRate ParRate { get; set; }
+
+        public DateTime[] Price(PlainVanillaBond uBond)
+        {
+            return(uBond.CashFlowSchedule);
+        }
+    }
+}
