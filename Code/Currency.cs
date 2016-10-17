@@ -11,7 +11,7 @@ namespace Market_Model_CSharp
      * *****************************************************************************************************************/
 
     /// <summary>
-    /// The <c>CurrencyClass</c> object is the basis to implement the <c>ValueClass</c> object and to perform operations on currency
+    /// The <c>CurrencyClass</c> clas is the basis to implement the <c>ValueClass</c> class and to perform operations on currencies
     /// </summary>
     public class CurrencyClass
     {
@@ -89,6 +89,7 @@ namespace Market_Model_CSharp
         /// <param name="CUR2">Currency that will be used as the target currency</param>
         public CurrencyPair(CurrencyClass CUR1, CurrencyClass CUR2)
         {
+            //TODO: throw exception if CUR1.Equals(CUR2)
             //There is no importance over which one is the base currency in this case
             //This is handled by the CurrencyExchange class
             BaseCurrency = CUR1;
@@ -107,6 +108,7 @@ namespace Market_Model_CSharp
         // (CUR 1, CUR 2) == (CUR 2, CUR 1)
         public override int GetHashCode()
         {
+            //TODO: improve the hashcode
             int minHashCode = Math.Min(BaseCurrency.GetHashCode(), TargetCurrency.GetHashCode());               //Start creating the hash code with the min value
             int maxHashCode = Math.Max(BaseCurrency.CodeISO.GetHashCode(), TargetCurrency.GetHashCode());       //Then use the max value
             int hash = 13;
@@ -214,21 +216,101 @@ namespace Market_Model_CSharp
     {
         public SimpleCurrencyExchange():base()
         {
-            Pairs = new HashSet<CurrencyPairSimpleRate>();
+            Pairs = new Dictionary<CurrencyPair, CurrencyPairSimpleRate>();
             Currencies = new HashSet<CurrencyClass>();
         }
 
         public void AddPair(CurrencyPairSimpleRate uPair)
         {
-            //TODO: check if the pair is already added
-            //If yes: Exception or modify pair method?
-            //Then, add all pairs involving the newly added currency(ies)
-            Pairs.Add(uPair);
-            Currencies.Add(uPair.BaseCurrency);
-            Currencies.Add(uPair.TargetCurrency);
+            //If the pair is not in the Pairs dictionary, add it
+            if (!Pairs.ContainsKey(uPair)) { Pairs.Add(new CurrencyPair(uPair.BaseCurrency,uPair.TargetCurrency),uPair); }
+            //TODOIf already in exchange: what to do? Exception? Update pair?
+            //Add the newly added currency (might be the base or the target currency
+            if(Currencies.Count == 0) { Currencies.Add(uPair.BaseCurrency);Currencies.Add(uPair.TargetCurrency); }
+            if (!Currencies.Contains(uPair.BaseCurrency)) { addNewCurrency(uPair, uPair.BaseCurrency,true); }
+            if (!Currencies.Contains(uPair.TargetCurrency)) { addNewCurrency(uPair, uPair.TargetCurrency,false); }
+            
         }
 
-        public HashSet<CurrencyPairSimpleRate> Pairs { get; }
+        public Dictionary<CurrencyPair, CurrencyPairSimpleRate> Pairs { get; }
+        //public HashSet<CurrencyPairSimpleRate> Pairs { get; }
         public HashSet<CurrencyClass> Currencies { get; set; }
+
+        /// <summary>
+        /// Private method used when a new currency is added to the currency exchange object
+        /// It creates all necessary pairs to have a consistent exchange rate
+        /// </summary>
+        /// <param name="uOrignatingPair">Currency pair that is added to the exchange</param>
+        /// <param name="uCurrency">Currency not currently in the Currencies hashset</param>
+        /// <param name="uNewCurrencyIsBase">True if the currency to add is the base currency</param>
+        private void addNewCurrency(
+            CurrencyPairSimpleRate uOrignatingPair, 
+            CurrencyClass uCurrency,
+            bool uNewCurrencyIsBase)
+        {
+            //First, create all pairs
+            foreach(CurrencyClass currentCurrency in Currencies)
+            {
+                CurrencyPair newKey;
+                if (currentCurrency != uOrignatingPair.BaseCurrency && currentCurrency != uOrignatingPair.TargetCurrency)
+                {
+                    CurrencyPairSimpleRate pairToAdd = MakeNewPair(uOrignatingPair, currentCurrency, uNewCurrencyIsBase);
+                    if (uNewCurrencyIsBase){ newKey = new CurrencyPair(uOrignatingPair.BaseCurrency,currentCurrency); }
+                    else { newKey = new CurrencyPair(uOrignatingPair.TargetCurrency,currentCurrency); }
+                    Pairs.Add(newKey, pairToAdd);
+                }
+            }
+            //Then, add the new currency to the hashset
+            Currencies.Add(uCurrency);
+        }
+
+        /// <summary>
+        /// Private method called 
+        /// </summary>
+        /// <param name="uBasisPair">Pair newly added</param>
+        /// <param name="uExistingCurrency">Currency already in the <c>Currencies</c> hashset that will be used to create a new pair</param>
+        /// <param name="uNewCurrencyIsBasis">True if the new currency is </param>
+        /// <returns>A <c>CurrencyPairSimpleRate</c> instance that will be added to the <c>Pairs</c> hashset</returns>
+        private CurrencyPairSimpleRate MakeNewPair(
+            CurrencyPairSimpleRate      uBasisPair,
+            CurrencyClass               uExistingCurrency,
+            bool                        uNewCurrencyIsBasis)
+        {
+            
+            CurrencyClass otherCurrency;
+            CurrencyClass newCurrency;
+            decimal vExistingPair;
+            decimal vNewPair;
+            //Fetch the currency from the newly added pair and get vNewPair
+            if (uNewCurrencyIsBasis)
+            { newCurrency = uBasisPair.BaseCurrency; otherCurrency = uBasisPair.TargetCurrency; vNewPair = uBasisPair.ExchangeRate.Worth; }
+            else
+            { newCurrency = uBasisPair.TargetCurrency; otherCurrency = uBasisPair.BaseCurrency; vNewPair = 1/uBasisPair.ExchangeRate.Worth; }
+            //Create a key to retrieve the existing pair involving the other currency and the currency to create the new pair
+            CurrencyPair keyPair = new CurrencyPair(otherCurrency,uExistingCurrency);
+            CurrencyPairSimpleRate tempPair = Pairs[keyPair];
+
+            if (tempPair.BaseCurrency.Equals(otherCurrency))
+            { vExistingPair = tempPair.ExchangeRate.Worth; }
+            else { vExistingPair = 1 / tempPair.ExchangeRate.Worth; }
+
+            return new CurrencyPairSimpleRate(newCurrency,uExistingCurrency,vNewPair*vExistingPair);
+        }
+
+        public ValueClass Convert(ValueClass valToConvert, CurrencyClass uTargetCurrency)
+        {
+            return (valToConvert);
+        }
+
+        /// <summary>
+        /// Takes a simple pair and return the inversed pair
+        /// </summary>
+        /// <param name="uPair">Pair to inverse</param>
+        /// <returns></returns>
+        public static CurrencyPairSimpleRate InversePair(CurrencyPairSimpleRate uPair)
+        {
+            return new CurrencyPairSimpleRate(uPair.TargetCurrency, uPair.BaseCurrency, 1 / uPair.ExchangeRate.Worth);
+        }
+
     }
 }
