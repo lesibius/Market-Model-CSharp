@@ -4,9 +4,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+/****************************************************************************************************************************
+ *                                                                                                                          *
+ *                                                      Currencies                                                          *
+ *                                                                                                                          *
+ * *************************************************************************************************************************/
+ /*
+  * This part of the library contains the basis to manage currencies. As one of the main building block of the ValueClass class
+  * (and thus of securities), currencies are an important feature of the library.
+  * 
+  * This library is organized as follow:
+  *     1) First, the definition <CurrencyClass> itself
+  *     2) Then, currency pairs
+  *         i)      Simple currency pairs: carry only one value (that can be viewed as the MID exchange rate)
+  *         ii)     Market currency pairs: carry a bid and a ask value
+  *     3) Finally, currency exchanges (as classes carrying currency pairs, not as organization)
+  *         i)      Based on simple currency pairs
+  *         ii)     Based on market currency pairs
+  * 
+  */
 namespace Market_Model_CSharp
 {
-    /* *****************************************************************************************************************
+    /* ******************************************************************************************************************
      *                                          Building Block for Currencies                                           *
      * *****************************************************************************************************************/
 
@@ -73,7 +92,6 @@ namespace Market_Model_CSharp
      *              and an ask price.
      */
 
-
     /// <summary>
     /// The <c>CurrencyPair</c> class is the basis to create <C>CurrencyExchange</C> instances
     /// It contains two currencies and some related method
@@ -81,6 +99,7 @@ namespace Market_Model_CSharp
     /// </summary>
     public class CurrencyPair
     {
+        //Warning: do not make this class abstract - it is very useful to generate keys efficiently for currency exchanges!
         /// <summary>
         /// Constructor of the <c>CurrencyPair</c> class.
         /// The <c>CurrencyPair</c> in itself does not contain any information about the exchange rate. This information is contained in its inherited classes.
@@ -209,7 +228,10 @@ namespace Market_Model_CSharp
         }
     }
 
-
+    /* ******************************************************************************************************************
+    *                                               Currency Exchanges                                                  *
+    * *****************************************************************************************************************/
+    //TODO: consider making this class abstract
     public class CurrencyExchange
     {
         public void AddPair(CurrencyPair uPair)
