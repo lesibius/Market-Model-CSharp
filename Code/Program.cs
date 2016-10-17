@@ -35,14 +35,14 @@ namespace Market_Model_CSharp
             SimpleForex.AddPair(USDEUR); //This will do nothing
             SimpleForex.AddPair(EURCHF);
             SimpleForex.AddPair(EURJPY);
-
+            
             //Get all pairs and print it
             Dictionary<CurrencyPair,CurrencyPairSimpleRate> allPairs = SimpleForex.Pairs;
             foreach(CurrencyPairSimpleRate pair in allPairs.Values)
             {
                 Console.WriteLine("{0}", pair);
                 //Why static does not work?
-                //Console.WriteLine("{0}", CurrencyPairSimpleRate.InversePair(pair));
+                Console.WriteLine("{0}", CurrencyPairSimpleRate.InversePair(pair));
             }
 
             DateTime issuance = new DateTime(1990, 4, 26);
@@ -50,10 +50,11 @@ namespace Market_Model_CSharp
 
             PlainVanillaBond someBond = new PlainVanillaBond("FR666666", "Some French Bond" , EUR, issuance, redemption,5, 1000);
             Console.WriteLine("ISIN: {0} - value: {1}{2}", someBond.ID, someBond.IntrinsicValue.Currency.CodeISO, someBond.IntrinsicValue.Worth);
-
+            Console.WriteLine("someBond value in JPY = {0}", SimpleForex.Convert(someBond.IntrinsicValue, JPY));
             //Let's change the value of the bond:
             PlainVanillaBond anotherBond = someBond;
             someBond.IntrinsicValue += 12.24m;
+            
             Console.WriteLine("ISIN: {0} - value: {1}{2}", someBond.ID, someBond.IntrinsicValue.Currency.CodeISO, someBond.IntrinsicValue.Worth);
             Console.Write("ISIN: {0} - Issued: {1} - Redemption: {2}", someBond.ID, someBond.IssueDate,someBond.RedemptionDate);
             Console.WriteLine("Just to make sure what append with the '+' overload: the value of anotherBond: {0}", anotherBond.IntrinsicValue);
