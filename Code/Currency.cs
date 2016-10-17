@@ -165,6 +165,15 @@ namespace Market_Model_CSharp
             return base.ToString() + " - " + ExchangeRate.Worth;
         }
 
+        /// <summary>
+        /// Takes a simple pair and return the inversed pair
+        /// </summary>
+        /// <param name="uPair">Pair to inverse</param>
+        /// <returns></returns>
+        public static CurrencyPairSimpleRate InversePair(CurrencyPairSimpleRate uPair)
+        {
+            return new CurrencyPairSimpleRate(uPair.TargetCurrency, uPair.BaseCurrency, 1 / uPair.ExchangeRate.Worth);
+        }
     }
 
     public class CurrencyPairMarketRate:CurrencyPair
@@ -299,18 +308,20 @@ namespace Market_Model_CSharp
 
         public ValueClass Convert(ValueClass valToConvert, CurrencyClass uTargetCurrency)
         {
-            return (valToConvert);
+            CurrencyPairSimpleRate tempRate;
+            //If valToConvert is already in the same currency
+            if (valToConvert.Currency.Equals(uTargetCurrency)) { return (valToConvert); }
+            //Else, fetch exchange rate
+            CurrencyPair key = new CurrencyPair(valToConvert.Currency, uTargetCurrency);
+            CurrencyPairSimpleRate exchangeRate = Pairs[key];
+            if (valToConvert.Currency.Equals(exchangeRate.BaseCurrency))
+            { tempRate = exchangeRate; }
+            else{ tempRate = CurrencyPairSimpleRate.InversePair(exchangeRate); }
+            return new ValueClass(exchangeRate.TargetCurrency, valToConvert.Worth * tempRate.ExchangeRate.Worth);
         }
 
-        /// <summary>
-        /// Takes a simple pair and return the inversed pair
-        /// </summary>
-        /// <param name="uPair">Pair to inverse</param>
-        /// <returns></returns>
-        public static CurrencyPairSimpleRate InversePair(CurrencyPairSimpleRate uPair)
-        {
-            return new CurrencyPairSimpleRate(uPair.TargetCurrency, uPair.BaseCurrency, 1 / uPair.ExchangeRate.Worth);
-        }
+        //NB: overriding the Convert for a SecurityClass is not a good idea:
+        //One always convert a value, not a security itself
 
     }
 }
